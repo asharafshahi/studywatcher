@@ -5,6 +5,8 @@ import sched, time
 import os.path
 import shutil
 import configparser
+import json
+import requests
 import SimpleITK as sitk
 
 def convertDCMtoMHD(dcm_path, mhd_path, deleteDCM=False):
@@ -31,6 +33,18 @@ def convertDCMtoMHD(dcm_path, mhd_path, deleteDCM=False):
     if deleteDCM:
         shutil.rmtree(dcm_path)
 
+def moveAndCallProxy(dcm_path):
+	studyFolder = shutil.move(dcm_path, dest_dir)
+	proxy_payload = {
+					'studyUID': studyUID,
+					'studyFolder': studyFolder
+					}
+	r = requests.post(proxy_endpoint_url, data=json.dumps(proxy_payload))
+	if (r.status_code == 200)
+		print('Study {} successfully submitted to proxy'.format(dcm_path))
+	else
+		print('Received status code {} from the proxy'.format(r.status_code))
+		
 def processReceivedStudies(sc):
     incoming_studies = {}  # dictionary object to track what new studies are coming in and need to be cleaned up
     study_dirs = [os.path.join(input_dir, d) for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
@@ -42,8 +56,8 @@ def processReceivedStudies(sc):
     for study in incoming_studies:
         # check each found study to see if the last changed file was changed more than X seconds ago, meaning we can start processing
         if (datetime.datetime.now() - datetime.datetime.fromtimestamp(incoming_studies[study])) > datetime.timedelta(seconds = study_complete_timout):
-            print('Study {} has been complete for more than 10 seconds'.format(study))
-            convertDCMtoMHD(study, dest_dir, True)
+            print('Study {} has been complete for more than 10 seconds. Moving and calling Proxy.'.format(study))
+            moveAndCallProxy(study)
 
     # restart the timer to repeat in 10 seconds
     sc.enter(poll_time, 1, processReceivedStudies, (sc,))
@@ -55,10 +69,13 @@ if __name__ == "__main__":
 
     input_dir = config['DEFAULT']['input_dir']
     dest_dir = config['DEFAULT']['dest_dir']
+	proxy_endpoint_url = config['DEFAULT']['proxy_endpoint']
     poll_time = int(config['DEFAULT']['poll_time'])
     study_complete_timout = int(config['DEFAULT']['study_complete_timeout'])
-
-    print('Checking {} for new incoming DICOM files every {} seconds and outputting MHD files to {}'.format(input_dir, poll_time, dest_dir))
+	
+	
+    print('Checking {} for new incoming DICOM files every {} seconds and calling proxy endpoint {}'.format(input_dir, 
+			poll_time, proxy_endpoint_url))
 
     # Start a timer to process the incoming directory after a 10 second delay
     s = sched.scheduler(time.time, time.sleep)
