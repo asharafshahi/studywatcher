@@ -46,7 +46,7 @@ def moveAndCallProxy(dcm_path):
 		if (r.status_code == 200):
 			print('Study {} successfully submitted to proxy'.format(dcm_path))
 		else:
-			print('Received status code {} from the proxy'.format(r.status_code)
+			print('Received status code {} from the proxy'.format(r.status_code))
 	
 	except requests.exceptions.RequestException as e:	
 		print('Failed to connect to Proxy.')	
