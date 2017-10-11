@@ -34,17 +34,23 @@ def convertDCMtoMHD(dcm_path, mhd_path, deleteDCM=False):
         shutil.rmtree(dcm_path)
 
 def moveAndCallProxy(dcm_path):
-	studyFolder = shutil.move(dcm_path, dest_dir)
+	studyUID = os.path.split(dcm_path)[1][2:]
+	studyFolder = shutil.move(dcm_path, os.path.join(dest_dir,studyUID))
+	print('Invoking proxy with study UID {}'.format(studyUID)) 
 	proxy_payload = {
 					'studyUID': studyUID,
 					'studyFolder': studyFolder
 					}
-	r = requests.post(proxy_endpoint_url, data=json.dumps(proxy_payload))
-	if (r.status_code == 200)
-		print('Study {} successfully submitted to proxy'.format(dcm_path))
-	else
-		print('Received status code {} from the proxy'.format(r.status_code))
-		
+	try:
+		r = requests.post(proxy_endpoint_url, data=json.dumps(proxy_payload))
+		if (r.status_code == 200):
+			print('Study {} successfully submitted to proxy'.format(dcm_path))
+		else:
+			print('Received status code {} from the proxy'.format(r.status_code)
+	
+	except requests.exceptions.RequestException as e:	
+		print('Failed to connect to Proxy.')	
+
 def processReceivedStudies(sc):
     incoming_studies = {}  # dictionary object to track what new studies are coming in and need to be cleaned up
     study_dirs = [os.path.join(input_dir, d) for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
@@ -69,7 +75,7 @@ if __name__ == "__main__":
 
     input_dir = config['DEFAULT']['input_dir']
     dest_dir = config['DEFAULT']['dest_dir']
-	proxy_endpoint_url = config['DEFAULT']['proxy_endpoint']
+    proxy_endpoint_url = config['DEFAULT']['proxy_endpoint']
     poll_time = int(config['DEFAULT']['poll_time'])
     study_complete_timout = int(config['DEFAULT']['study_complete_timeout'])
 	
