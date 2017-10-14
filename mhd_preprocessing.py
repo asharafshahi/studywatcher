@@ -35,9 +35,13 @@ def convertDCMtoMHD(dcm_path, mhd_path, deleteDCM=False):
 
 
 if __name__ == "__main__":
-    if (sys.argv) < 3:
+    if len(sys.argv) < 3:
         print('This pre-processing script requires two command line arguments.')
         print('Usage: mhd_preprocessing.py <source_path> <dest_path>')
         sys.exit()
 
-    convertDCMtoMHD(sys.argv[1], sys.argv[2], True)
+    if len(sys.argv) == 4:
+        delete_option = sys.argv[3]
+    else:
+        delete_option = False
+    convertDCMtoMHD(sys.argv[1], sys.argv[2], delete_option)
