@@ -12,7 +12,14 @@ import SimpleITK as sitk
 
 def moveAndCallProxy(dcm_path):
 	studyUID = os.path.split(dcm_path)[1][2:]
-	studyFolder = shutil.move(dcm_path, os.path.join(dest_dir,studyUID))
+	dest_path = os.path.join(dest_dir,studyUID)
+	if os.path.exists(dest_path):
+		try:
+			shutil.rmtree(dest_path)
+		except Exception as e:
+	        print(e)
+
+	studyFolder = shutil.move(dcm_path, dest_path)
 	print('Invoking proxy with study UID {}'.format(studyUID))
 	proxy_payload = {
 					'studyUID': studyUID,
@@ -46,6 +53,14 @@ def processReceivedStudies(sc):
     # restart the timer to repeat in 10 seconds
     sc.enter(poll_time, 1, processReceivedStudies, (sc,))
 
+def deleteContents(folderPath):
+	for item in os.listdir(folderPath):
+	    item_path = os.path.join(folderPath, item)
+	    try:
+	        if os.path.isfile(item_path): os.unlink(item_path)
+	        elif os.path.isdir(item_path): shutil.rmtree(item_path)
+	    except Exception as e:
+	        print(e)
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
@@ -57,6 +72,8 @@ if __name__ == "__main__":
     poll_time = int(config['DEFAULT']['poll_time'])
     study_complete_timout = int(config['DEFAULT']['study_complete_timeout'])
 
+    # clear out outgoing directory to avoid errors and easily handle garbage clean up
+	deleteContents(dest_dir)
 
     print('Checking {} for new incoming DICOM files every {} seconds and calling proxy endpoint {}'.format(input_dir,
 			poll_time, proxy_endpoint_url))
