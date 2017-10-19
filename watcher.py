@@ -17,14 +17,14 @@ def moveAndCallProxy(dcm_path):
 		try:
 			shutil.rmtree(dest_path)
 		except Exception as e:
-	        print(e)
+	        	print(e)
 
 	studyFolder = shutil.move(dcm_path, dest_path)
 	print('Invoking proxy with study UID {}'.format(studyUID))
 	proxy_payload = {
-					'studyUID': studyUID,
-					'studyFolder': studyFolder
-					}
+				'studyUID': studyUID,
+				'studyFolder': studyFolder
+			}
 	try:
 		r = requests.post(proxy_endpoint_url, data=json.dumps(proxy_payload))
 		if (r.status_code == 200):
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     study_complete_timout = int(config['DEFAULT']['study_complete_timeout'])
 
     # clear out outgoing directory to avoid errors and easily handle garbage clean up
-	deleteContents(dest_dir)
+    deleteContents(dest_dir)
 
     print('Checking {} for new incoming DICOM files every {} seconds and calling proxy endpoint {}'.format(input_dir,
 			poll_time, proxy_endpoint_url))
